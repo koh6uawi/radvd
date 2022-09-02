@@ -38,7 +38,7 @@ START_TEST(test_add_ra_header)
 {
 
 	struct safe_buffer sb = SAFE_BUFFER_INIT;
-	add_ra_header(&sb, &iface->ra_header_info, iface->state_info.cease_adv);
+	add_ra_header(&sb, &iface->ra_header_info, iface->prop.name, iface->state_info.cease_adv);
 
 #ifdef PRINT_SAFE_BUFFER
 	char buf[4096];

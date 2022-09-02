@@ -32,7 +32,7 @@ static int get_prefix_lifetimes(struct AdvPrefix const *prefix, unsigned int *va
 static void limit_prefix_lifetimes(struct AdvPrefix *prefix);
 
 // Options that only need a single block
-static void add_ra_header(struct safe_buffer *sb, struct ra_header_info const *ra_header_info, int cease_adv);
+static void add_ra_header(struct safe_buffer *sb, struct ra_header_info const *ra_header_info, const char *name, int cease_adv);
 static void add_ra_option_prefix(struct safe_buffer *sb, struct AdvPrefix const *prefix, int cease_adv);
 static void add_ra_option_mtu(struct safe_buffer *sb, uint32_t AdvLinkMTU);
 static void add_ra_option_sllao(struct safe_buffer *sb, struct sllao const *sllao);
@@ -202,7 +202,7 @@ static void update_iface_times(struct Interface *iface)
 *       add_ra_*                                                                *
 ********************************************************************************/
 
-static void add_ra_header(struct safe_buffer *sb, struct ra_header_info const *ra_header_info, int cease_adv)
+static void add_ra_header(struct safe_buffer *sb, struct ra_header_info const *ra_header_info, const char *iface, int cease_adv)
 {
 	struct nd_router_advert radvert;
 
@@ -221,7 +221,7 @@ static void add_ra_header(struct safe_buffer *sb, struct ra_header_info const *r
 		radvert.nd_ra_router_lifetime = 0;
 	} else {
 		/* if forwarding is disabled, send zero router lifetime */
-		radvert.nd_ra_router_lifetime = !check_ip6_forwarding() ? htons(ra_header_info->AdvDefaultLifetime) : 0;
+		radvert.nd_ra_router_lifetime = !check_ip6_iface_forwarding(iface) ? htons(ra_header_info->AdvDefaultLifetime) : 0;
 	}
 	radvert.nd_ra_flags_reserved |= (ra_header_info->AdvDefaultPreference << ND_OPT_RI_PRF_SHIFT) & ND_OPT_RI_PRF_MASK;
 
@@ -888,7 +888,7 @@ static int send_ra(int sock, struct Interface *iface, struct in6_addr const *des
 
 	// Build RA header
 	struct safe_buffer *ra_hdr = new_safe_buffer();
-	add_ra_header(ra_hdr, &iface->ra_header_info, iface->state_info.cease_adv);
+	add_ra_header(ra_hdr, &iface->ra_header_info, iface->props.name, iface->state_info.cease_adv);
 	// Build RA option list
 	struct safe_buffer_list *ra_opts = build_ra_options(iface, dest);
 
